@@ -15,7 +15,7 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    // Googl Angle
+    // Google Angle
 
     const angle_lib_dir_path = switch (target.result.os.tag) {
         .linux => "libs/angle/linux-x86_64/",
@@ -89,8 +89,11 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         // Additional options here
         .native = true,
-        .use_gles = true,
+        .gles = true,
+        // .metal = true,
     });
+
+    glfw.artifact("glfw").linkFramework("QuartzCore");
 
     // This creates a "module", which represents a collection of source files alongside
     // some compilation options, such as optimization mode and linked system libraries.
