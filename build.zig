@@ -88,6 +88,8 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         // Additional options here
+        .native = true,
+        .use_gles = true,
     });
 
     // This creates a "module", which represents a collection of source files alongside
