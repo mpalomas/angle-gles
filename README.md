@@ -1,4 +1,4 @@
-# Zig + Google Angle + OpenGLES 3.0 boilerplate
+# Zig + Google Angle + OpenGL ES 3.0 boilerplate
 
 Why OpenGL ES 3.0? Motivation:
 - OpenGL Desktop versions have different level of support: MacOS stops at 4.1... Windows and Linux get 4.6. Embedded systems don't support it.
@@ -30,6 +30,11 @@ debug: OpenGL extensions count: 129
 
 MacOS output:
 ```
+debug: OpenGL renderer: ANGLE (Apple, Apple M1 Pro, OpenGL 4.1 Metal - 89.3)
+debug: OpenGL ES 3.0.0 (ANGLE 2.1.24801 git hash: 914c97c116e0)
+debug: OpenGL ES GLSL ES 3.00 (ANGLE 2.1.24801 git hash: 914c97c116e0)
+debug: OpenGL extensions count: 103
+... the list of extensions ...
 ```
 
 Linux output

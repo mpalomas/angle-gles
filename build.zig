@@ -38,10 +38,7 @@ pub fn build(b: *std.Build) void {
         else => unreachable,
     };
 
-    const gles3_lib_name = switch (target.result.os.tag) {
-        .windows => "GLESv3.dll",
-        else => unreachable,
-    };
+    const gles3_lib_name = "GLESv3.dll";
 
     const angle_mod = b.createModule(.{
         .target = target,
@@ -209,6 +206,14 @@ pub fn build(b: *std.Build) void {
         .name = "angle_gles",
         .root_module = exe_mod,
     });
+
+    // help loader to find angle dylib in local deployment dir
+    // not great since I think it stores hard coded full path?
+    // maybe try set env variable from this build script instead?
+    if (target.result.os.tag == .macos) {
+        exe.addRPath(b.path("zig-out/bin"));
+    }
+
     // necessary if a dependency (angle) uses linkSystemLibrary above
     // exe.addLibraryPath(b.path(angle_lib_dir_path));
 
