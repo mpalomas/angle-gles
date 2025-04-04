@@ -94,6 +94,44 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(angle_lib);
 
+    // dcimgui
+    const dcimgui_mod = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+        .link_libcpp = true,
+    });
+    const dcimgui_lib = b.addLibrary(.{
+        .name = "dcimgui",
+        .linkage = .static,
+        .root_module = dcimgui_mod,
+        // .use_lld = if (target.result.os.tag == .windows) true else false,
+    });
+    dcimgui_mod.addCMacro("IMGUI_USER_CONFIG", "\"imgui_user_config.h\"");
+    dcimgui_mod.addCMacro("IMGUI_IMPL_OPENGL_ES3", "1");
+    dcimgui_mod.addIncludePath(b.path("libs/dcimgui"));
+    dcimgui_mod.addCSourceFiles(.{
+        .files = &.{
+            "libs/dcimgui/dcimgui.cpp",
+            // "libs/dcimgui/dcimgui_impl_sdl3.cpp",
+            "libs/dcimgui/dcimgui_impl_opengl3.cpp",
+            "libs/dcimgui/imgui_demo.cpp",
+            "libs/dcimgui/imgui_draw.cpp",
+            "libs/dcimgui/imgui_tables.cpp",
+            "libs/dcimgui/imgui_widgets.cpp",
+            "libs/dcimgui/imgui.cpp",
+            // "libs/dcimgui/imgui_impl_sdl3.cpp",
+            "libs/dcimgui/imgui_impl_opengl3.cpp",
+        },
+    });
+    dcimgui_lib.addLibraryPath(b.path(angle_lib_dir_path));
+    // dcimgui_lib.linkLibrary(sdl_lib);
+    // we probably need to link with Angle for GL ES headers?
+    dcimgui_lib.linkLibrary(angle_lib);
+    dcimgui_lib.linkLibCpp();
+    dcimgui_lib.installHeadersDirectory(b.path("libs/dcimgui"), "dcimgui", .{});
+    b.installArtifact(dcimgui_lib);
+
     // GLFW
     const glfw = b.dependency("glfw", .{
         .target = target,
@@ -137,13 +175,14 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    exe_mod.linkLibrary(angle_lib);
-    exe_mod.linkLibrary(glfw.artifact("glfw"));
     // on Windows library path does not seem transitive? Probably private?
     // => add it also to our exe module
     if (target.result.os.tag == .windows) {
         exe_mod.addLibraryPath(b.path(angle_lib_dir_path));
     }
+    exe_mod.linkLibrary(angle_lib);
+    exe_mod.linkLibrary(glfw.artifact("glfw"));
+    exe_mod.linkLibrary(dcimgui_lib);
 
     // Modules can depend on one another using the `std.Build.Module.addImport` function.
     // This is what allows Zig source code to use `@import("foo")` where 'foo' is not a
