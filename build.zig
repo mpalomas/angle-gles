@@ -239,6 +239,9 @@ pub fn build(b: *std.Build) void {
         run_cmd.addArgs(args);
     }
 
+    // TODO test this, it may work instead of addRPath
+    //run_cmd.setEnvironmentVariable(key: []const u8, value: []const u8)
+
     // This creates a build step. It will be visible in the `zig build --help` menu,
     // and can be selected like this: `zig build run`
     // This will evaluate the `run` step rather than the default, which is "install".
