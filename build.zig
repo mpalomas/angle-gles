@@ -38,6 +38,11 @@ pub fn build(b: *std.Build) void {
         else => unreachable,
     };
 
+    const gles3_lib_name = switch (target.result.os.tag) {
+        .windows => "GLESv3.dll",
+        else => unreachable,
+    };
+
     const angle_mod = b.createModule(.{
         .target = target,
         .optimize = optimize,
@@ -79,6 +84,12 @@ pub fn build(b: *std.Build) void {
 
         b.installBinFile(egl_lib_full_path, egl_lib_name);
         b.installBinFile(gles_lib_full_path, gles_lib_name);
+
+        if (target.result.os.tag == .windows) {
+            const gles3_parts = [_][]const u8{ angle_lib_dir_path, gles3_lib_name };
+            const gles3_lib_full_path = std.mem.concat(allocator, u8, &gles3_parts) catch unreachable;
+            b.installBinFile(gles3_lib_full_path, gles3_lib_name);
+        }
     }
 
     b.installArtifact(angle_lib);
@@ -93,7 +104,15 @@ pub fn build(b: *std.Build) void {
         // .metal = true,
     });
 
-    glfw.artifact("glfw").linkFramework("QuartzCore");
+    if (target.result.os.tag == .macos) {
+        glfw.artifact("glfw").linkFramework("QuartzCore");
+    }
+    // on Windows, GLFW is looking for libGLESv3.dll...
+    // ok so first we need to copy v2 in v3
+    // then we need to add the path
+    if (target.result.os.tag == .windows) {
+        glfw.artifact("glfw").addLibraryPath(b.path(angle_lib_dir_path));
+    }
 
     // This creates a "module", which represents a collection of source files alongside
     // some compilation options, such as optimization mode and linked system libraries.
@@ -120,6 +139,11 @@ pub fn build(b: *std.Build) void {
     });
     exe_mod.linkLibrary(angle_lib);
     exe_mod.linkLibrary(glfw.artifact("glfw"));
+    // on Windows library path does not seem transitive? Probably private?
+    // => add it also to our exe module
+    if (target.result.os.tag == .windows) {
+        exe_mod.addLibraryPath(b.path(angle_lib_dir_path));
+    }
 
     // Modules can depend on one another using the `std.Build.Module.addImport` function.
     // This is what allows Zig source code to use `@import("foo")` where 'foo' is not a
