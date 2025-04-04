@@ -8,6 +8,8 @@ const glfw = @cImport({
     @cInclude("GLFW/glfw3.h");
 });
 
+const gl = @import("gles30.zig");
+
 // https://gist.github.com/kassane/a81d1ae2fa2e8c656b91afee8b949426
 pub const log_level: std.log.Level = switch (builtin.mode) {
     .Debug => .debug,
@@ -21,6 +23,9 @@ pub const std_options: std.Options = .{
 fn errorCallback(_: c_int, desc: [*c]const u8) callconv(.c) void {
     std.debug.print("GLFW Error: {s}\n", .{desc});
 }
+
+// Procedure table that will hold OpenGL functions loaded at runtime.
+var procs: gl.ProcTable = undefined;
 
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
@@ -49,7 +54,7 @@ pub fn main() !void {
     glfw.glfwWindowHint(glfw.GLFW_CONTEXT_CREATION_API, glfw.GLFW_EGL_CONTEXT_API);
 
     // TODO/note
-    // Ok this will look for libEGL...
+    // on macOS (Linux?) this will look (dlopen) for libEGL...
     // zig build run does NOT work but running from zig-out/bin DOES work
     // find a way to get it work in BOTH cases
     const window = glfw.glfwCreateWindow(640, 480, "OpenGL ES 3.0 Triangle (EGL)", null, null);
@@ -57,7 +62,43 @@ pub fn main() !void {
         return error.WindowFailed;
     }
 
+    glfw.glfwMakeContextCurrent(window);
+
+    // Initialize the procedure table.
+    if (!procs.init(glfw.glfwGetProcAddress)) return error.GlProcInitFailed;
+
+    // Make the procedure table current on the calling thread.
+    gl.makeProcTableCurrent(&procs);
+    defer gl.makeProcTableCurrent(null);
+
+    printGLInfo();
+
     defer glfw.glfwTerminate();
+}
+
+fn printGLInfo() void {
+    const renderer = gl.GetString(gl.RENDERER);
+    const version = gl.GetString(gl.VERSION);
+    const glsl_version = gl.GetString(gl.SHADING_LANGUAGE_VERSION);
+
+    std.log.debug("OpenGL renderer: {s}", .{renderer.?});
+    std.log.debug("{s}", .{version.?});
+    std.log.debug("{s}", .{glsl_version.?});
+
+    // Get the number of extensions available
+    var numExtensions: c_int = 0;
+    gl.GetIntegerv(gl.NUM_EXTENSIONS, @ptrCast(&numExtensions));
+
+    std.log.debug("OpenGL extensions count: {d}", .{numExtensions});
+
+    // Loop through all available extensions and print them
+    for (0..@intCast(numExtensions)) |ext_idx| {
+        const ext_name = gl.GetStringi(gl.EXTENSIONS, @intCast(ext_idx));
+        if (ext_name) |name| {
+            // _ = name;
+            std.log.debug("{s}", .{name});
+        }
+    }
 }
 
 test "simple test" {
