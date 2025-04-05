@@ -73,7 +73,8 @@ pub fn main() !void {
 
     printGLInfo();
 
-    defer glfw.glfwTerminate();
+    // will crash: https://github.com/glfw/glfw/issues/2380
+    // defer glfw.glfwTerminate();
 }
 
 fn printGLInfo() void {

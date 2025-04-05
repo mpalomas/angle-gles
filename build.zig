@@ -15,6 +15,8 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
+    const allocator = std.heap.page_allocator;
+
     // Google Angle
 
     const angle_lib_dir_path = switch (target.result.os.tag) {
@@ -40,6 +42,9 @@ pub fn build(b: *std.Build) void {
 
     const gles3_lib_name = "GLESv3.dll";
 
+    const egl_lib_link_name = "libEGL.so.1";
+    const gles_lib_link_name = "libGLESv2.so.2";
+
     const angle_mod = b.createModule(.{
         .target = target,
         .optimize = optimize,
@@ -54,8 +59,7 @@ pub fn build(b: *std.Build) void {
     });
     angle_mod.addCSourceFile(.{ .file = b.addWriteFiles().add("empty.c", "") });
     angle_lib.installHeadersDirectory(b.path("libs/angle/include"), "", .{});
-    if (target.result.os.tag == .macos or target.result.os.tag == .windows) {
-        const allocator = std.heap.page_allocator;
+    if (target.result.os.tag == .macos or target.result.os.tag == .windows or target.result.os.tag == .linux) {
         const egl_parts = [_][]const u8{ angle_lib_dir_path, egl_lib_name };
         const egl_lib_full_path = std.mem.concat(allocator, u8, &egl_parts) catch unreachable;
         // defer allocator.destroy(egl_parts);
@@ -86,6 +90,15 @@ pub fn build(b: *std.Build) void {
             const gles3_parts = [_][]const u8{ angle_lib_dir_path, gles3_lib_name };
             const gles3_lib_full_path = std.mem.concat(allocator, u8, &gles3_parts) catch unreachable;
             b.installBinFile(gles3_lib_full_path, gles3_lib_name);
+        }
+        // GLFW on Linux is looking for versioned .so...
+        if (target.result.os.tag == .linux) {
+            const egl_link_parts = [_][]const u8{ angle_lib_dir_path, egl_lib_link_name };
+            const egl_link_full_path = std.mem.concat(allocator, u8, &egl_link_parts) catch unreachable;
+            b.installBinFile(egl_link_full_path, egl_lib_link_name);
+            const gles_link_parts = [_][]const u8{ angle_lib_dir_path, gles_lib_link_name };
+            const gles_link_full_path = std.mem.concat(allocator, u8, &gles_link_parts) catch unreachable;
+            b.installBinFile(gles_link_full_path, gles_lib_link_name);
         }
     }
 
@@ -147,6 +160,10 @@ pub fn build(b: *std.Build) void {
     // then we need to add the path
     if (target.result.os.tag == .windows) {
         glfw.artifact("glfw").addLibraryPath(b.path(angle_lib_dir_path));
+    }
+    // I don't understand... this is a static lib, rpath should only work on exe/so?
+    if (target.result.os.tag == .linux) {
+        glfw.artifact("glfw").addRPath(b.path("zig-out/bin"));
     }
 
     // This creates a "module", which represents a collection of source files alongside
@@ -210,7 +227,7 @@ pub fn build(b: *std.Build) void {
     // help loader to find angle dylib in local deployment dir
     // not great since I think it stores hard coded full path?
     // maybe try set env variable from this build script instead?
-    if (target.result.os.tag == .macos) {
+    if (target.result.os.tag == .macos or target.result.os.tag == .linux) {
         exe.addRPath(b.path("zig-out/bin"));
     }
 
@@ -241,6 +258,20 @@ pub fn build(b: *std.Build) void {
 
     // TODO test this, it may work instead of addRPath
     //run_cmd.setEnvironmentVariable(key: []const u8, value: []const u8)
+    if (target.result.os.tag == .macos or target.result.os.tag == .linux) {
+        const env_map = run_cmd.getEnvMap();
+        const maybe_ld_path = env_map.get("LD_LIBRARY_PATH");
+        var ld_path: []const u8 = "";
+        if (maybe_ld_path) |paths| {
+            ld_path = paths;
+        }
+
+        // std.fmt.allocPrint(allocator: mem.Allocator, comptime fmt: []const u8, args: anytype);
+        const ld_parts = [_][]const u8{ b.getInstallPath(.bin, ""), ":", ld_path };
+        const new_ld_paths = std.mem.concat(allocator, u8, &ld_parts) catch unreachable;
+        run_cmd.setEnvironmentVariable("LD_LIBRARY_PATH", new_ld_paths);
+        std.log.debug("LD_LIBRARY_PATH: {s}", .{new_ld_paths});
+    }
 
     // This creates a build step. It will be visible in the `zig build --help` menu,
     // and can be selected like this: `zig build run`
