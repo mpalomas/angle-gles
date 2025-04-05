@@ -151,7 +151,7 @@ pub fn build(b: *std.Build) void {
         .gles = true,
         // .metal = true,
     });
-
+    // the GLFW zig package does not link with QuartzCore, why?
     if (target.result.os.tag == .macos) {
         glfw.artifact("glfw").linkFramework("QuartzCore");
     }
@@ -203,6 +203,15 @@ pub fn build(b: *std.Build) void {
     // file path. In this case, we set up `exe_mod` to import `lib_mod`.
     exe_mod.addImport("angle_gles_lib", lib_mod);
 
+    // https://github.com/ziglang/zig/issues/15849
+    if (target.result.os.tag == .macos) {
+        exe_mod.addRPathSpecial("@executable_path/.");
+    } else if (target.result.os.tag == .linux) {
+        // objdump -x path/to/executable | grep RPATH
+        // TODO test this
+        exe_mod.addRPathSpecial("$ORIGIN");
+    }
+
     // Now, we will create a static library based on the module we created above.
     // This creates a `std.Build.Step.Compile`, which is the build step responsible
     // for actually invoking the compiler.
@@ -227,8 +236,9 @@ pub fn build(b: *std.Build) void {
     // necessary: help loader to find angle dylib in local deployment dir
     // not great since I think it stores hard coded full path?
     // maybe try set env variable from this build script instead?
-    if (target.result.os.tag == .macos or target.result.os.tag == .linux) {
-        exe.addRPath(b.path("zig-out/bin"));
+    // if (target.result.os.tag == .macos or target.result.os.tag == .linux) {
+    if (target.result.os.tag == .linux) {
+        // exe.addRPath(b.path("zig-out/bin"));
     }
 
     // necessary if a dependency (angle) uses linkSystemLibrary above
