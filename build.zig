@@ -72,17 +72,6 @@ pub fn build(b: *std.Build) void {
         std.log.debug("EGL full path: {s}", .{egl_lib_full_path});
         std.log.debug("GLES full path: {s}", .{gles_lib_full_path});
 
-        // necessary to link angle properly despite not being used
-        // angle_lib.addLibraryPath(b.path(angle_lib_dir_path));
-        // // weird: linux and macOS will automatically add "lib"
-        // if (target.result.os.tag == .windows) {
-        //     angle_lib.linkSystemLibrary("libEGL");
-        //     angle_lib.linkSystemLibrary("libGLESv2");
-        // } else {
-        //     angle_lib.linkSystemLibrary("EGL");
-        //     angle_lib.linkSystemLibrary("GLESv2");
-        // }
-
         b.installBinFile(egl_lib_full_path, egl_lib_name);
         b.installBinFile(gles_lib_full_path, gles_lib_name);
 
@@ -135,8 +124,7 @@ pub fn build(b: *std.Build) void {
         },
     });
     dcimgui_lib.addLibraryPath(b.path(angle_lib_dir_path));
-    // dcimgui_lib.linkLibrary(sdl_lib);
-    // we probably need to link with Angle for GL ES headers?
+    // we need to link with Angle to get the GL(ES) headers
     dcimgui_lib.linkLibrary(angle_lib);
     dcimgui_lib.linkLibCpp();
     dcimgui_lib.installHeadersDirectory(b.path("libs/dcimgui"), "dcimgui", .{});
@@ -147,7 +135,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         // Additional options here
-        .native = true, // we use our own GL(ES) headers
+        .native = true, // we use our own GL(ES) headers from Angle
         .gles = true,
         // .metal = true,
     });
@@ -161,10 +149,6 @@ pub fn build(b: *std.Build) void {
     if (target.result.os.tag == .windows) {
         glfw.artifact("glfw").addLibraryPath(b.path(angle_lib_dir_path));
     }
-    // I don't understand... this is a static lib, rpath should only work on exe/so?
-    // if (target.result.os.tag == .linux) {
-    //     glfw.artifact("glfw").addRPath(b.path("zig-out/bin/"));
-    // }
 
     // This creates a "module", which represents a collection of source files alongside
     // some compilation options, such as optimization mode and linked system libraries.
@@ -204,6 +188,7 @@ pub fn build(b: *std.Build) void {
     exe_mod.addImport("angle_gles_lib", lib_mod);
 
     // https://github.com/ziglang/zig/issues/15849
+    // rpath magic
     if (target.result.os.tag == .macos) {
         exe_mod.addRPathSpecial("@executable_path/.");
     } else if (target.result.os.tag == .linux) {
@@ -233,17 +218,6 @@ pub fn build(b: *std.Build) void {
         .root_module = exe_mod,
     });
 
-    // necessary: help loader to find angle dylib in local deployment dir
-    // not great since I think it stores hard coded full path?
-    // maybe try set env variable from this build script instead?
-    // if (target.result.os.tag == .macos or target.result.os.tag == .linux) {
-    if (target.result.os.tag == .linux) {
-        // exe.addRPath(b.path("zig-out/bin"));
-    }
-
-    // necessary if a dependency (angle) uses linkSystemLibrary above
-    // exe.addLibraryPath(b.path(angle_lib_dir_path));
-
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).
@@ -264,21 +238,6 @@ pub fn build(b: *std.Build) void {
     // command itself, like this: `zig build run -- arg1 arg2 etc`
     if (b.args) |args| {
         run_cmd.addArgs(args);
-    }
-
-    if (target.result.os.tag == .macos or target.result.os.tag == .linux) {
-        const env_map = run_cmd.getEnvMap();
-        const maybe_ld_path = env_map.get("LD_LIBRARY_PATH");
-        var ld_path: []const u8 = "";
-        if (maybe_ld_path) |paths| {
-            ld_path = paths;
-        }
-
-        // std.fmt.allocPrint(allocator: mem.Allocator, comptime fmt: []const u8, args: anytype);
-        // const ld_parts = [_][]const u8{ b.getInstallPath(.bin, ""), ":", ld_path };
-        // const new_ld_paths = std.mem.concat(allocator, u8, &ld_parts) catch unreachable;
-        // run_cmd.setEnvironmentVariable("LD_LIBRARY_PATH", new_ld_paths);
-        // std.log.debug("LD_LIBRARY_PATH: {s}", .{new_ld_paths});
     }
 
     // This creates a build step. It will be visible in the `zig build --help` menu,
