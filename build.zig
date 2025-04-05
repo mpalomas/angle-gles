@@ -147,7 +147,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
         // Additional options here
-        .native = true,
+        .native = true, // we use our own GL(ES) headers
         .gles = true,
         // .metal = true,
     });
@@ -162,9 +162,9 @@ pub fn build(b: *std.Build) void {
         glfw.artifact("glfw").addLibraryPath(b.path(angle_lib_dir_path));
     }
     // I don't understand... this is a static lib, rpath should only work on exe/so?
-    if (target.result.os.tag == .linux) {
-        glfw.artifact("glfw").addRPath(b.path("zig-out/bin"));
-    }
+    // if (target.result.os.tag == .linux) {
+    //     glfw.artifact("glfw").addRPath(b.path("zig-out/bin/"));
+    // }
 
     // This creates a "module", which represents a collection of source files alongside
     // some compilation options, such as optimization mode and linked system libraries.
@@ -224,7 +224,7 @@ pub fn build(b: *std.Build) void {
         .root_module = exe_mod,
     });
 
-    // help loader to find angle dylib in local deployment dir
+    // necessary: help loader to find angle dylib in local deployment dir
     // not great since I think it stores hard coded full path?
     // maybe try set env variable from this build script instead?
     if (target.result.os.tag == .macos or target.result.os.tag == .linux) {
@@ -256,8 +256,6 @@ pub fn build(b: *std.Build) void {
         run_cmd.addArgs(args);
     }
 
-    // TODO test this, it may work instead of addRPath
-    //run_cmd.setEnvironmentVariable(key: []const u8, value: []const u8)
     if (target.result.os.tag == .macos or target.result.os.tag == .linux) {
         const env_map = run_cmd.getEnvMap();
         const maybe_ld_path = env_map.get("LD_LIBRARY_PATH");
@@ -267,10 +265,10 @@ pub fn build(b: *std.Build) void {
         }
 
         // std.fmt.allocPrint(allocator: mem.Allocator, comptime fmt: []const u8, args: anytype);
-        const ld_parts = [_][]const u8{ b.getInstallPath(.bin, ""), ":", ld_path };
-        const new_ld_paths = std.mem.concat(allocator, u8, &ld_parts) catch unreachable;
-        run_cmd.setEnvironmentVariable("LD_LIBRARY_PATH", new_ld_paths);
-        std.log.debug("LD_LIBRARY_PATH: {s}", .{new_ld_paths});
+        // const ld_parts = [_][]const u8{ b.getInstallPath(.bin, ""), ":", ld_path };
+        // const new_ld_paths = std.mem.concat(allocator, u8, &ld_parts) catch unreachable;
+        // run_cmd.setEnvironmentVariable("LD_LIBRARY_PATH", new_ld_paths);
+        // std.log.debug("LD_LIBRARY_PATH: {s}", .{new_ld_paths});
     }
 
     // This creates a build step. It will be visible in the `zig build --help` menu,

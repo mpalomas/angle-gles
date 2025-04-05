@@ -39,6 +39,21 @@ debug: OpenGL extensions count: 103
 
 Linux output
 ```
+debug: OpenGL renderer: ANGLE (AMD, AMD Radeon RX 5700 XT (radeonsi navi10 LLVM 19.1.1), OpenGL 4.6 (Core Profile) Mesa 24.2.8-1ubuntu1~24.10.1)
+debug: OpenGL ES 3.0.0 (ANGLE 2.1.24969 git hash: 079266db4452)
+debug: OpenGL ES GLSL ES 3.00 (ANGLE 2.1.24969 git hash: 079266db4452)
+debug: OpenGL extensions count: 145
+... the list of extensions ...
+```
+
+Linux output from the installed dir :( (need LD_LIBRARY_PATH)
+```
+$ ./angle_gles 
+All your codebase are belong to us.
+Run `zig build test` to run the tests.
+Error loading EGL entry points: dlopen(/home/michael/dev/zig/angle-gles/zig-out/binlibGLESv2.so) failed with error: /home/michael/dev/zig/angle-gles/zig-out/binlibGLESv2.so: cannot open shared object file: No such file or directory, stat() call failed.
+Segmentation fault at address 0x0
+
 ```
 
 [How to use Angle + GLFW](https://discourse.glfw.org/t/how-to-use-angle-glfw/2429/7)

@@ -82,22 +82,22 @@ fn printGLInfo() void {
     const version = gl.GetString(gl.VERSION);
     const glsl_version = gl.GetString(gl.SHADING_LANGUAGE_VERSION);
 
-    std.log.debug("OpenGL renderer: {s}", .{renderer.?});
-    std.log.debug("{s}", .{version.?});
-    std.log.debug("{s}", .{glsl_version.?});
+    std.debug.print("OpenGL renderer: {s}\n", .{renderer.?});
+    std.debug.print("{s}\n", .{version.?});
+    std.debug.print("{s}\n", .{glsl_version.?});
 
     // Get the number of extensions available
     var numExtensions: c_int = 0;
     gl.GetIntegerv(gl.NUM_EXTENSIONS, @ptrCast(&numExtensions));
 
-    std.log.debug("OpenGL extensions count: {d}", .{numExtensions});
+    std.debug.print("OpenGL extensions count: {d}\n", .{numExtensions});
 
     // Loop through all available extensions and print them
     for (0..@intCast(numExtensions)) |ext_idx| {
         const ext_name = gl.GetStringi(gl.EXTENSIONS, @intCast(ext_idx));
         if (ext_name) |name| {
             // _ = name;
-            std.log.debug("{s}", .{name});
+            std.debug.print("{s}\n", .{name});
         }
     }
 }
