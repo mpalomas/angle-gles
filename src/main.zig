@@ -4,8 +4,15 @@
 const builtin = @import("builtin");
 
 const glfw = @cImport({
-    @cDefine("GLFW_INCLUDE_NONE", {});
+    // @cDefine("GLFW_INCLUDE_NONE", {});
     @cInclude("GLFW/glfw3.h");
+});
+
+pub const ig = @cImport({
+    @cDefine("IMGUI_IMPL_OPENGL_ES3", "1");
+    @cInclude("dcimgui/dcimgui.h");
+    // @cInclude("dcimgui/dcimgui_impl_opengl3.h");
+    // @cInclude("dcimgui/dcimgui_impl_glfw.h");
 });
 
 const gl = @import("gles30.zig");
@@ -22,6 +29,14 @@ pub const std_options: std.Options = .{
 
 fn errorCallback(_: c_int, desc: [*c]const u8) callconv(.c) void {
     std.debug.print("GLFW Error: {s}\n", .{desc});
+}
+
+fn keyCallback(window: ?*glfw.GLFWwindow, key: c_int, scancode: c_int, action: c_int, mods: c_int) callconv(.c) void {
+    _ = scancode;
+    _ = mods;
+    if (key == glfw.GLFW_KEY_ESCAPE and action == glfw.GLFW_PRESS) {
+        glfw.glfwSetWindowShouldClose(window, glfw.GLFW_TRUE);
+    }
 }
 
 // Procedure table that will hold OpenGL functions loaded at runtime.
@@ -63,10 +78,12 @@ pub fn main() !void {
     glfw.glfwWindowHint(glfw.GLFW_CONTEXT_VERSION_MINOR, 0);
     glfw.glfwWindowHint(glfw.GLFW_CONTEXT_CREATION_API, glfw.GLFW_EGL_CONTEXT_API);
 
-    const window = glfw.glfwCreateWindow(640, 480, "OpenGL ES 3.0 Triangle (EGL)", null, null);
+    const window = glfw.glfwCreateWindow(800, 450, "Zig OpenGL ES 3.0 Triangle", null, null);
     if (window == null) {
         return error.WindowFailed;
     }
+
+    _ = glfw.glfwSetKeyCallback(window, keyCallback);
 
     glfw.glfwMakeContextCurrent(window);
 
@@ -78,6 +95,48 @@ pub fn main() !void {
     defer gl.makeProcTableCurrent(null);
 
     printGLInfo(printExtensions);
+
+    _ = ig.ImGui_CreateContext(null);
+    defer ig.ImGui_DestroyContext(null);
+    const io = ig.ImGui_GetIO();
+    io.*.ConfigFlags |= ig.ImGuiConfigFlags_NavEnableKeyboard;
+    ig.ImGui_StyleColorsDark(null);
+
+    // _ = ig.cImGui_ImplGlfw_InitForOpenGL(@ptrCast(window), true);
+
+    // const glsl_version = "#version 300 es";
+    // _ = ig.cImGui_ImplOpenGL3_InitEx(glsl_version);
+
+    // vsync
+    glfw.glfwSwapInterval(1);
+
+    while (glfw.glfwWindowShouldClose(window) == 0) {
+        glfw.glfwPollEvents();
+        // Update the viewport to reflect any changes to the window's size.
+        var width: c_int = undefined;
+        var height: c_int = undefined;
+        glfw.glfwGetFramebufferSize(window, &width, &height);
+        if (width <= 0 or height <= 0) {
+            continue;
+        }
+
+        gl.Viewport(0, 0, width, height);
+        gl.ClearBufferfv(gl.COLOR, 0, &.{ 1, 1, 1, 1 });
+
+        // Start the Dear ImGui frame
+        // ig.cImGui_ImplOpenGL3_NewFrame();
+        // ig.cImGui_ImplGlfw_NewFrame();
+        // ig.ImGui_NewFrame();
+
+        // _ = ig.ImGui_Begin("Hello, world!", null, ig.ImGuiWindowFlags_None);
+        // ig.ImGui_End();
+
+        // ig.ImGui_Render();
+
+        // ig.cImGui_ImplOpenGL3_RenderDrawData(ig.ImGui_GetDrawData());
+
+        glfw.glfwSwapBuffers(window);
+    }
 
     // will crash: https://github.com/glfw/glfw/issues/2380
     // defer glfw.glfwTerminate();

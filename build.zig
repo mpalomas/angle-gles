@@ -102,15 +102,18 @@ pub fn build(b: *std.Build) void {
         .gles = true,
         // .metal = true,
     });
+
+    const glfw_lib = glfw.artifact("glfw");
+
     // the GLFW zig package does not link with QuartzCore, why?
     if (target.result.os.tag == .macos) {
-        glfw.artifact("glfw").linkFramework("QuartzCore");
+        glfw_lib.linkFramework("QuartzCore");
     }
     // on Windows, GLFW is looking for libGLESv3.dll...
     // ok so first we need to copy v2 in v3
     // then we need to add the path
     if (target.result.os.tag == .windows) {
-        glfw.artifact("glfw").addLibraryPath(b.path(angle_lib_dir_path));
+        glfw_lib.addLibraryPath(b.path(angle_lib_dir_path));
     }
 
     // dcimgui
@@ -124,10 +127,11 @@ pub fn build(b: *std.Build) void {
         .name = "dcimgui",
         .linkage = .static,
         .root_module = dcimgui_mod,
-        // .use_lld = if (target.result.os.tag == .windows) true else false,
+        .use_lld = if (target.result.os.tag == .windows) true else false,
     });
     dcimgui_mod.addCMacro("IMGUI_USER_CONFIG", "\"imgui_user_config.h\"");
     dcimgui_mod.addCMacro("IMGUI_IMPL_OPENGL_ES3", "1");
+    // dcimgui_mod.addCMacro("GL_GLEXT_PROTOTYPES", "1");
     dcimgui_mod.addIncludePath(b.path("libs/dcimgui"));
     dcimgui_mod.addCSourceFiles(.{
         .files = &.{
@@ -148,7 +152,7 @@ pub fn build(b: *std.Build) void {
     dcimgui_lib.addLibraryPath(b.path(angle_lib_dir_path));
     // we need to link with Angle to get the GL(ES) headers
     dcimgui_lib.linkLibrary(angle_lib);
-    dcimgui_lib.linkLibrary(glfw.artifact("glfw"));
+    dcimgui_lib.linkLibrary(glfw_lib);
     dcimgui_lib.linkLibCpp();
     dcimgui_lib.installHeadersDirectory(b.path("libs/dcimgui"), "dcimgui", .{});
     b.installArtifact(dcimgui_lib);
@@ -182,7 +186,7 @@ pub fn build(b: *std.Build) void {
         exe_mod.addLibraryPath(b.path(angle_lib_dir_path));
     }
     exe_mod.linkLibrary(angle_lib);
-    exe_mod.linkLibrary(glfw.artifact("glfw"));
+    exe_mod.linkLibrary(glfw_lib);
     exe_mod.linkLibrary(dcimgui_lib);
 
     // Modules can depend on one another using the `std.Build.Module.addImport` function.
