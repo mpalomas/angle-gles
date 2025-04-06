@@ -9,10 +9,9 @@ const glfw = @cImport({
 });
 
 pub const ig = @cImport({
-    @cDefine("IMGUI_IMPL_OPENGL_ES3", "1");
     @cInclude("dcimgui/dcimgui.h");
-    // @cInclude("dcimgui/dcimgui_impl_opengl3.h");
-    // @cInclude("dcimgui/dcimgui_impl_glfw.h");
+    @cInclude("dcimgui/dcimgui_impl_opengl3.h");
+    @cInclude("dcimgui/dcimgui_impl_glfw.h");
 });
 
 const gl = @import("gles30.zig");
@@ -102,7 +101,7 @@ pub fn main() !void {
     io.*.ConfigFlags |= ig.ImGuiConfigFlags_NavEnableKeyboard;
     ig.ImGui_StyleColorsDark(null);
 
-    // _ = ig.cImGui_ImplGlfw_InitForOpenGL(@ptrCast(window), true);
+    _ = ig.cImGui_ImplGlfw_InitForOpenGL(@ptrCast(window), true);
 
     // const glsl_version = "#version 300 es";
     // _ = ig.cImGui_ImplOpenGL3_InitEx(glsl_version);
@@ -137,6 +136,8 @@ pub fn main() !void {
 
         glfw.glfwSwapBuffers(window);
     }
+
+    ig.cImGui_ImplGlfw_Shutdown();
 
     // will crash: https://github.com/glfw/glfw/issues/2380
     // defer glfw.glfwTerminate();
