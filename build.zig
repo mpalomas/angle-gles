@@ -93,6 +93,26 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(angle_lib);
 
+    // GLFW
+    const glfw = b.dependency("glfw", .{
+        .target = target,
+        .optimize = optimize,
+        // Additional options here
+        .native = true, // we use our own GL(ES) headers from Angle
+        .gles = true,
+        // .metal = true,
+    });
+    // the GLFW zig package does not link with QuartzCore, why?
+    if (target.result.os.tag == .macos) {
+        glfw.artifact("glfw").linkFramework("QuartzCore");
+    }
+    // on Windows, GLFW is looking for libGLESv3.dll...
+    // ok so first we need to copy v2 in v3
+    // then we need to add the path
+    if (target.result.os.tag == .windows) {
+        glfw.artifact("glfw").addLibraryPath(b.path(angle_lib_dir_path));
+    }
+
     // dcimgui
     const dcimgui_mod = b.createModule(.{
         .target = target,
@@ -113,6 +133,7 @@ pub fn build(b: *std.Build) void {
         .files = &.{
             "libs/dcimgui/dcimgui.cpp",
             // "libs/dcimgui/dcimgui_impl_sdl3.cpp",
+            "libs/dcimgui/dcimgui_impl_glfw.cpp",
             "libs/dcimgui/dcimgui_impl_opengl3.cpp",
             "libs/dcimgui/imgui_demo.cpp",
             "libs/dcimgui/imgui_draw.cpp",
@@ -120,35 +141,17 @@ pub fn build(b: *std.Build) void {
             "libs/dcimgui/imgui_widgets.cpp",
             "libs/dcimgui/imgui.cpp",
             // "libs/dcimgui/imgui_impl_sdl3.cpp",
+            "libs/dcimgui/imgui_impl_glfw.cpp",
             "libs/dcimgui/imgui_impl_opengl3.cpp",
         },
     });
     dcimgui_lib.addLibraryPath(b.path(angle_lib_dir_path));
     // we need to link with Angle to get the GL(ES) headers
     dcimgui_lib.linkLibrary(angle_lib);
+    dcimgui_lib.linkLibrary(glfw.artifact("glfw"));
     dcimgui_lib.linkLibCpp();
     dcimgui_lib.installHeadersDirectory(b.path("libs/dcimgui"), "dcimgui", .{});
     b.installArtifact(dcimgui_lib);
-
-    // GLFW
-    const glfw = b.dependency("glfw", .{
-        .target = target,
-        .optimize = optimize,
-        // Additional options here
-        .native = true, // we use our own GL(ES) headers from Angle
-        .gles = true,
-        // .metal = true,
-    });
-    // the GLFW zig package does not link with QuartzCore, why?
-    if (target.result.os.tag == .macos) {
-        glfw.artifact("glfw").linkFramework("QuartzCore");
-    }
-    // on Windows, GLFW is looking for libGLESv3.dll...
-    // ok so first we need to copy v2 in v3
-    // then we need to add the path
-    if (target.result.os.tag == .windows) {
-        glfw.artifact("glfw").addLibraryPath(b.path(angle_lib_dir_path));
-    }
 
     // This creates a "module", which represents a collection of source files alongside
     // some compilation options, such as optimization mode and linked system libraries.
