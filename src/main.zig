@@ -103,6 +103,7 @@ pub fn main() !void {
 
     _ = ig.cImGui_ImplGlfw_InitForOpenGL(@ptrCast(window), true);
 
+    // this will trigger tons of GL undefined symbols
     // const glsl_version = "#version 300 es";
     // _ = ig.cImGui_ImplOpenGL3_InitEx(glsl_version);
 
