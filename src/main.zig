@@ -43,6 +43,8 @@ var gl_procs: gl.ProcTable = undefined;
 
 var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
 
+const is_windows: bool = if (builtin.os.tag == .windows) true else false;
+
 pub fn main() !void {
     const gpa, const is_debug = gpa: {
         if (builtin.os.tag == .wasi) break :gpa .{ std.heap.wasm_allocator, false };
@@ -103,9 +105,11 @@ pub fn main() !void {
 
     _ = ig.cImGui_ImplGlfw_InitForOpenGL(@ptrCast(window), true);
 
-    // this will trigger tons of GL undefined symbols
-    // const glsl_version = "#version 300 es";
-    // _ = ig.cImGui_ImplOpenGL3_InitEx(glsl_version);
+    // this will trigger tons of GL undefined symbols at link time in boths Linux and MacOS
+    if (comptime is_windows) {
+        const glsl_version = "#version 300 es";
+        _ = ig.cImGui_ImplOpenGL3_InitEx(glsl_version);
+    }
 
     // vsync
     glfw.glfwSwapInterval(1);
@@ -123,19 +127,25 @@ pub fn main() !void {
         gl.Viewport(0, 0, width, height);
         gl.ClearBufferfv(gl.COLOR, 0, &.{ 1, 1, 1, 1 });
 
-        // Start the Dear ImGui frame
-        // ig.cImGui_ImplOpenGL3_NewFrame();
-        // ig.cImGui_ImplGlfw_NewFrame();
-        // ig.ImGui_NewFrame();
+        if (comptime is_windows) {
+            // Start the Dear ImGui frame
+            ig.cImGui_ImplOpenGL3_NewFrame();
+            ig.cImGui_ImplGlfw_NewFrame();
+            ig.ImGui_NewFrame();
 
-        // _ = ig.ImGui_Begin("Hello, world!", null, ig.ImGuiWindowFlags_None);
-        // ig.ImGui_End();
+            _ = ig.ImGui_Begin("Hello, world!", null, ig.ImGuiWindowFlags_None);
+            ig.ImGui_End();
 
-        // ig.ImGui_Render();
+            ig.ImGui_Render();
 
-        // ig.cImGui_ImplOpenGL3_RenderDrawData(ig.ImGui_GetDrawData());
+            ig.cImGui_ImplOpenGL3_RenderDrawData(ig.ImGui_GetDrawData());
+        }
 
         glfw.glfwSwapBuffers(window);
+    }
+
+    if (comptime is_windows) {
+        ig.cImGui_ImplOpenGL3_Shutdown();
     }
 
     ig.cImGui_ImplGlfw_Shutdown();
