@@ -127,7 +127,7 @@ pub fn build(b: *std.Build) void {
         .name = "dcimgui",
         .linkage = .static,
         .root_module = dcimgui_mod,
-        .use_lld = if (target.result.os.tag == .windows) true else false,
+        // .use_lld = if (target.result.os.tag == .windows) true else false,
     });
     dcimgui_mod.addCMacro("IMGUI_USER_CONFIG", "\"imgui_user_config.h\"");
     dcimgui_mod.addCMacro("IMGUI_IMPL_OPENGL_ES3", "1");
@@ -185,6 +185,12 @@ pub fn build(b: *std.Build) void {
     if (target.result.os.tag == .windows) {
         exe_mod.addLibraryPath(b.path(angle_lib_dir_path));
     }
+    // I don't understand why I need to link on macOS and Linux
+    // it's supposed to use dlopen? and it works on Windows?!
+    else {
+        // exe_mod.addLibraryPath(b.path(angle_lib_dir_path));
+        // exe_mod.linkSystemLibrary("GLESv2", .{});
+    }
     exe_mod.linkLibrary(angle_lib);
     exe_mod.linkLibrary(glfw_lib);
     exe_mod.linkLibrary(dcimgui_lib);
@@ -195,9 +201,12 @@ pub fn build(b: *std.Build) void {
     exe_mod.addImport("angle_gles_lib", lib_mod);
 
     // https://github.com/ziglang/zig/issues/15849
-    // rpath magic
+    // rpath magic for GLFW dlopen
     if (target.result.os.tag == .macos) {
         exe_mod.addRPathSpecial("@executable_path/.");
+        // would I need the following on macOS??
+        // https://stackoverflow.com/questions/78381702/dynamic-linker-in-mac-is-not-reading-rpath
+        // exe_mod.addRPathSpecial("@rpath/.");
     } else if (target.result.os.tag == .linux) {
         // objdump -x path/to/executable | grep RPATH
         // TODO test this
