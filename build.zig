@@ -188,8 +188,8 @@ pub fn build(b: *std.Build) void {
     // I don't understand why I need to link on macOS and Linux
     // it's supposed to use dlopen? and it works on Windows?!
     else {
-        // exe_mod.addLibraryPath(b.path(angle_lib_dir_path));
-        // exe_mod.linkSystemLibrary("GLESv2", .{});
+        exe_mod.addLibraryPath(b.path(angle_lib_dir_path));
+        exe_mod.linkSystemLibrary("GLESv2", .{});
     }
     exe_mod.linkLibrary(angle_lib);
     exe_mod.linkLibrary(glfw_lib);
