@@ -27,7 +27,7 @@ debug: OpenGL ES GLSL ES 3.00 (ANGLE 2.1.25165 git hash: bbf92d12266d)
 debug: OpenGL extensions count: 129
 ... the list of extensions ...
 ```
-
+![Windows screenshot](img/screenshot_windows.jpg)
 MacOS output:
 ```
 debug: OpenGL renderer: ANGLE (Apple, Apple M1 Pro, OpenGL 4.1 Metal - 89.3)
