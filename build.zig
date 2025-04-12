@@ -203,8 +203,10 @@ pub fn build(b: *std.Build) void {
         // exe_mod.addRPathSpecial("@rpath/.");
     } else if (target.result.os.tag == .linux) {
         // objdump -x path/to/executable | grep RPATH
-        // TODO test this
-        exe_mod.addRPathSpecial("$ORIGIN");
+        // readelf -d ./angle_gles
+        // chrpath -l angle_gles
+        // https://github.com/ghostty-org/ghostty/pull/6706
+        exe_mod.addRPathSpecial("$ORIGIN/.");
     }
 
     // Now, we will create a static library based on the module we created above.
@@ -255,6 +257,13 @@ pub fn build(b: *std.Build) void {
     // This will evaluate the `run` step rather than the default, which is "install".
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
+
+    const clean_step = b.step("clean", "Clean up");
+
+    clean_step.dependOn(&b.addRemoveDirTree(b.path("zig-out")).step);
+    if (@import("builtin").os.tag != .windows) {
+        clean_step.dependOn(&b.addRemoveDirTree(b.path(".zig-cache")).step);
+    }
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
