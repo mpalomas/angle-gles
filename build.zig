@@ -68,10 +68,6 @@ pub fn build(b: *std.Build) void {
         const gles_lib_full_path = std.mem.concat(allocator, u8, &gles_parts) catch unreachable;
         // defer allocator.destroy(gles_parts);
 
-        std.log.debug("Angle lib dir path: {s}", .{angle_lib_dir_path});
-        std.log.debug("EGL full path: {s}", .{egl_lib_full_path});
-        std.log.debug("GLES full path: {s}", .{gles_lib_full_path});
-
         b.installBinFile(egl_lib_full_path, egl_lib_name);
         b.installBinFile(gles_lib_full_path, gles_lib_name);
 
@@ -130,8 +126,6 @@ pub fn build(b: *std.Build) void {
         // .use_lld = if (target.result.os.tag == .windows) true else false,
     });
     dcimgui_mod.addCMacro("IMGUI_USER_CONFIG", "\"imgui_user_config.h\"");
-    dcimgui_mod.addCMacro("IMGUI_IMPL_OPENGL_ES3", "1");
-    // dcimgui_mod.addCMacro("GL_GLEXT_PROTOTYPES", "1");
     dcimgui_mod.addIncludePath(b.path("libs/dcimgui"));
     dcimgui_mod.addCSourceFiles(.{
         .files = &.{

@@ -117,7 +117,6 @@
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
 #include "imgui_impl_opengl3.h"
-#include <stdio.h>
 #include <stdint.h>     // intptr_t
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
@@ -787,7 +786,6 @@ bool    ImGui_ImplOpenGL3_CreateDeviceObjects()
     // Parse GLSL version string
     int glsl_version = 130;
     sscanf(bd->GlslVersionString, "#version %d", &glsl_version);
-    printf("Imgui backend GLSL version: %d", glsl_version);
 
     const GLchar* vertex_shader_glsl_120 =
         "uniform mat4 ProjMtx;\n"
