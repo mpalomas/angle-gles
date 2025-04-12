@@ -205,6 +205,7 @@ pub fn build(b: *std.Build) void {
         // objdump -x path/to/executable | grep RPATH
         // readelf -d ./angle_gles
         // chrpath -l angle_gles
+        // patchelf --force-rpath --set-rpath '$ORIGIN'/. libEGL.so
         // https://github.com/ghostty-org/ghostty/pull/6706
         exe_mod.addRPathSpecial("$ORIGIN/.");
     }
