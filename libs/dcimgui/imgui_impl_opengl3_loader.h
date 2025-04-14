@@ -661,7 +661,8 @@
  static void *libgl;
  static int open_libgl(void)
  {
-     libgl = dlopen("/System/Library/Frameworks/OpenGL.framework/OpenGL", RTLD_LAZY | RTLD_LOCAL);
+    //  libgl = dlopen("/System/Library/Frameworks/OpenGL.framework/OpenGL", RTLD_LAZY | RTLD_LOCAL);
+     libgl = dlopen("libGLESv2.dylib", RTLD_LAZY | RTLD_LOCAL);
      if (!libgl)
          return GL3W_ERROR_LIBRARY_OPEN;
      return GL3W_OK;

@@ -126,6 +126,7 @@ pub fn build(b: *std.Build) void {
         // .use_lld = if (target.result.os.tag == .windows) true else false,
     });
     dcimgui_mod.addCMacro("IMGUI_USER_CONFIG", "\"imgui_user_config.h\"");
+    // dcimgui_mod.addCMacro("IMGUI_IMPL_OPENGL_DEBUG", "1");
     dcimgui_mod.addIncludePath(b.path("libs/dcimgui"));
     dcimgui_mod.addCSourceFiles(.{
         .files = &.{
