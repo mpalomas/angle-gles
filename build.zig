@@ -55,7 +55,8 @@ pub fn build(b: *std.Build) void {
         .name = "angle",
         .linkage = .static,
         .root_module = angle_mod,
-        // .use_lld = if (target.result.os.tag == .windows) true else false,
+        .use_lld = if (target.result.os.tag == .windows) true else false,
+        .use_llvm = if (target.result.os.tag == .windows) true else false,
     });
     angle_mod.addCSourceFile(.{ .file = b.addWriteFiles().add("empty.c", "") });
     angle_lib.installHeadersDirectory(b.path("libs/angle/include"), "", .{});
@@ -123,7 +124,8 @@ pub fn build(b: *std.Build) void {
         .name = "dcimgui",
         .linkage = .static,
         .root_module = dcimgui_mod,
-        // .use_lld = if (target.result.os.tag == .windows) true else false,
+        .use_lld = if (target.result.os.tag == .windows) true else false,
+        .use_llvm = if (target.result.os.tag == .windows) true else false,
     });
     dcimgui_mod.addCMacro("IMGUI_USER_CONFIG", "\"imgui_user_config.h\"");
     // dcimgui_mod.addCMacro("IMGUI_IMPL_OPENGL_DEBUG", "1");
@@ -218,6 +220,8 @@ pub fn build(b: *std.Build) void {
         .linkage = .static,
         .name = "angle_gles",
         .root_module = lib_mod,
+        .use_lld = if (target.result.os.tag == .windows) true else false,
+        .use_llvm = if (target.result.os.tag == .windows) true else false,
     });
 
     // This declares intent for the library to be installed into the standard
@@ -230,6 +234,8 @@ pub fn build(b: *std.Build) void {
     const exe = b.addExecutable(.{
         .name = "angle_gles",
         .root_module = exe_mod,
+        .use_lld = if (target.result.os.tag == .windows) true else false,
+        .use_llvm = if (target.result.os.tag == .windows) true else false,
     });
 
     // This declares intent for the executable to be installed into the
